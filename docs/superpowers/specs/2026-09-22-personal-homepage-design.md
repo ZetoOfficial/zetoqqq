@@ -52,7 +52,7 @@ this repository, replacing the basics-starter files currently present.
 
 Taken from the starter: `BaseHead.astro`, `Header.astro`,
 `Footer.astro`, `HeaderLink.astro`, `FormattedDate.astro`,
-`layouts/BlogPost.astro`, `content.config.ts`, `pages/rss.xml.js`,
+`layouts/BlogPost.astro`, `content.config.ts`, `pages/rss.xml.ts`,
 `consts.ts`, and the `@astrojs/mdx`, `@astrojs/rss`, `@astrojs/sitemap`
 integrations.
 
@@ -156,8 +156,12 @@ entry is AI Interviewer: an LLM platform for technical interviews
 (Python, FastAPI, LangGraph, PostgreSQL, Redis, S3, WebRTC, LiveKit),
 demo at `ai-interviewer.zetoqqq.ru`.
 
-**`/blog`, `/blog/[slug]`, `/rss.xml`** — built and styled, linked from
-nowhere while the collection is empty.
+**`/blog`, `/blog/[slug]`, `/rss.xml`** — built and styled, and not linked
+from the site's own navigation while the collection is empty. They remain
+in the sitemap and the RSS autodiscovery link stays on every page: the
+alternative is a sitemap filter that would have to be removed the day the
+first post lands, which is exactly the "no further change" breakage this
+design is trying to avoid.
 
 ### Conditional writing section
 
