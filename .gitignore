@@ -25,3 +25,7 @@ pnpm-debug.log*
 
 # visual brainstorming companion
 .superpowers/
+
+# playwright
+/test-results/
+/playwright-report/

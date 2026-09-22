@@ -17,6 +17,18 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 const { title, description, image } = Astro.props;
 ---
 
+<script is:inline>
+	// Applied before first paint so a stored preference never flashes.
+	try {
+		const stored = localStorage.getItem('theme');
+		if (stored === 'light' || stored === 'dark') {
+			document.documentElement.dataset.theme = stored;
+		}
+	} catch {
+		// localStorage can throw in private mode; the OS preference still applies.
+	}
+</script>
+
 <!-- Global Metadata -->
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />

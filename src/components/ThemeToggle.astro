@@ -1,0 +1,43 @@
+<button id="theme-toggle" type="button" aria-live="polite">
+	<span class="sr-only">Toggle theme</span>
+	<span aria-hidden="true" data-icon>◐</span>
+</button>
+
+<script>
+	const button = document.getElementById('theme-toggle');
+
+	function current(): 'light' | 'dark' {
+		const explicit = document.documentElement.dataset.theme;
+		if (explicit === 'light' || explicit === 'dark') return explicit;
+		return window.matchMedia('(prefers-color-scheme: dark)').matches
+			? 'dark'
+			: 'light';
+	}
+
+	button?.addEventListener('click', () => {
+		const next = current() === 'dark' ? 'light' : 'dark';
+		document.documentElement.dataset.theme = next;
+		try {
+			localStorage.setItem('theme', next);
+		} catch {
+			// Preference is not persisted in private mode; the flip still applies.
+		}
+	});
+</script>
+
+<style>
+	button {
+		margin-left: auto;
+		padding: 0;
+		background: none;
+		border: 0;
+		color: var(--ink-dim);
+		font-family: var(--font-mono);
+		font-size: var(--fs-sm);
+		line-height: 1;
+		cursor: pointer;
+	}
+	button:hover {
+		color: var(--ink);
+	}
+</style>

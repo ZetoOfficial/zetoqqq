@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
+import ThemeToggle from '../components/ThemeToggle.astro';
 import { SITE_DESCRIPTION } from '../consts';
 import { buildNav } from '../lib/nav';
 
@@ -24,7 +25,9 @@ const nav = buildNav(posts.length > 0);
 	</head>
 	<body>
 		<a class="skip-link" href="#main">Skip to content</a>
-		<Header nav={nav} />
+		<Header nav={nav}>
+			<ThemeToggle slot="toggle" />
+		</Header>
 		<main id="main" class="column">
 			<slot />
 		</main>
