@@ -138,16 +138,58 @@ function findColoursInValue(value) {
  *     `` style={`...`} `` — which sit in markup, not inside any `{ }`, so
  *     source 1 alone would silently miss them.
  *
- * `cssText` may be a bare declaration (e.g. `"color: white;"`), a full
- * stylesheet, or a whole `.astro` file mixing frontmatter, markup and a
- * `<style>` block.
+ * `cssText` must be CSS: a bare declaration list (e.g. `"color: white;"`) or
+ * a full stylesheet. For the text of a source file — anything that is not
+ * CSS at its top level — use `findColourLiteralsInFile` instead.
  *
  * Returns an array of the matched colour snippets (empty if none).
  */
 export function findColourLiterals(cssText) {
 	const withoutComments = stripComments(cssText);
+	// The `{ }` wrapper is what lets a bare declaration list be scanned: it
+	// makes the whole text one leaf block. That is correct ONLY when the
+	// caller genuinely has CSS. For a source file it is a lie — see
+	// `findColourLiteralsInFile`.
 	const braceValues = collectDeclarationValues(`{${withoutComments}}`);
 	const inlineStyleValues = collectInlineStyleValues(withoutComments);
+	return collectOffenders(braceValues, inlineStyleValues);
+}
+
+/**
+ * Finds literal colour values in the text of a **source file** of any type —
+ * `.css`, `.astro`, `.ts`, `.js`, `.md`, `.mdx`.
+ *
+ * Same detector as `findColourLiterals`, same two sources, with one
+ * difference that matters: the text is NOT wrapped in `{ }` first. Only
+ * genuine brace-delimited blocks are treated as declaration lists.
+ *
+ * That distinction is the whole point of this function existing separately.
+ * `findColourLiterals` wraps its input so that a bare `color: red;` snippet
+ * scans as a declaration list. Applied to a file with no inner braces —
+ * every ordinary `.md`/`.mdx`, and any brace-free `.ts` — the wrapper turns
+ * the entire file into one "declaration": frontmatter supplies the first
+ * colon, and everything after it becomes a "value", so any CSS named colour
+ * occurring in ordinary prose is reported. A post titled
+ * `title: 'Blue-green deploys in Go'` whose body says "there is no silver
+ * bullet" yields `["silver"]`. `silver`, `white`, `gold`, `olive`, `navy`,
+ * `teal`, `tan`, `plum`, `coral`, `snow`, `ivory`, `khaki`, `brown`, `gray`
+ * and `grey` are all ordinary developer prose.
+ *
+ * Dropping the wrapper costs nothing real. No file on disk has CSS
+ * declarations at its top level: a `.css` file's declarations all live
+ * inside rule blocks, an `.astro` file's inside its `<style>` block, and a
+ * `.md` file has none at all. What a `.md` file *can* carry is an inline
+ * `style="color:#fff"` — the case the widened walk exists for — and that is
+ * found by the inline-style source, which is unaffected.
+ */
+export function findColourLiteralsInFile(text) {
+	const withoutComments = stripComments(text);
+	const braceValues = collectDeclarationValues(withoutComments);
+	const inlineStyleValues = collectInlineStyleValues(withoutComments);
+	return collectOffenders(braceValues, inlineStyleValues);
+}
+
+function collectOffenders(braceValues, inlineStyleValues) {
 	const offenders = [];
 	for (const value of [...braceValues, ...inlineStyleValues]) {
 		offenders.push(...findColoursInValue(value));

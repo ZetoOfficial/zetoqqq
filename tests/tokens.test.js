@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import { findColourLiterals } from './lib/colour-scan.js';
+import { findColourLiteralsInFile } from './lib/colour-scan.js';
 
 const SRC = new URL('../src/', import.meta.url).pathname;
 const TOKENS = join(SRC, 'styles/tokens.css');
@@ -14,9 +14,14 @@ function walk(dir) {
 		if (statSync(full).isDirectory()) out.push(...walk(full));
 		// Deliberately wider than `.astro|.css`: a colour can be hardcoded in
 		// a `.ts` data file, a `.js` endpoint, or — the case the invariant
-		// exists for — a future blog post's inline `style="color:#fff"`. The
-		// detector only reads CSS declaration values and inline `style`
-		// attributes, so widening the walk costs no false positives.
+		// exists for — a future blog post's inline `style="color:#fff"`.
+		//
+		// Widening the walk is only safe alongside `findColourLiteralsInFile`
+		// rather than `findColourLiterals`. The latter wraps its input in
+		// `{ }`, which for a brace-free file (every ordinary `.md`) makes the
+		// whole file one declaration whose "value" is everything after the
+		// frontmatter's first colon — so a post that says "no silver bullet"
+		// gets reported. See the note on `findColourLiteralsInFile`.
 		else if (/\.(astro|css|ts|js|mjs|md|mdx)$/.test(name)) out.push(full);
 	}
 	return out;
@@ -114,7 +119,7 @@ test('no file outside tokens.css hardcodes a colour', () => {
 	for (const file of walk(SRC)) {
 		if (file === TOKENS) continue;
 		const text = readFileSync(file, 'utf8');
-		for (const match of findColourLiterals(text)) {
+		for (const match of findColourLiteralsInFile(text)) {
 			offenders.push(`${relative(SRC, file)}: ${match}`);
 		}
 	}

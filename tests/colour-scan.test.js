@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { findColourLiterals } from './lib/colour-scan.js';
+import { findColourLiterals, findColourLiteralsInFile } from './lib/colour-scan.js';
 
 // The guard test (tokens.test.js) is only as good as this detector. Every
 // case here is something the detector must be shown to catch, or shown not
@@ -121,4 +121,54 @@ test('does not flag frontmatter prose that happens to mention a colour word', ()
 		const d = 'a post about the colour red';
 	`;
 	assert.deepEqual(findColourLiterals(frontmatter), []);
+});
+
+// `findColourLiteralsInFile` is what the guard walk uses, and it exists
+// because `findColourLiterals`'s `{ }` wrapper is wrong for a file that has
+// no braces in it — which is every ordinary Markdown post. These cases pin
+// both halves of that: prose must not be scanned as CSS, and the one thing
+// in a `.md` that genuinely IS CSS must still be caught.
+
+const MARKDOWN_POST = `---
+title: 'Blue-green deploys in Go'
+description: 'On rollouts.'
+pubDate: 2026-01-01
+---
+
+The silver bullet is that there is no silver bullet. We moved the gold path
+onto a teal dashboard and called it a day.
+`;
+
+test('does not flag colour words in the prose of a Markdown post', () => {
+	// The wrapping trick makes the frontmatter's first colon start a
+	// "declaration" whose value is the rest of the file, so every named
+	// colour in the body is reported. That would red `npm run test:unit` on
+	// the first real post committed — breaking the "committing the first post
+	// needs no further change" promise at the exact moment it is tested.
+	assert.deepEqual(findColourLiteralsInFile(MARKDOWN_POST), []);
+
+	// The bug this guards against, stated as an executable fact: the
+	// CSS-input function really does report those words, which is why the
+	// walk must not use it on files.
+	assert.deepEqual(findColourLiterals(MARKDOWN_POST), ['silver', 'silver', 'gold', 'teal']);
+});
+
+test('does not flag a colour word in a brace-free TypeScript file', () => {
+	const ts = "export const SITE_TITLE = 'Notes: a silver lining';\n";
+	assert.deepEqual(findColourLiteralsInFile(ts), []);
+});
+
+test('still flags an inline style attribute inside a Markdown post', () => {
+	// The case the widened walk exists for. Narrowing the file scan to real
+	// brace blocks must not cost this.
+	const post = `${MARKDOWN_POST}\n<p style="color:#fff">A callout.</p>\n`;
+	assert.deepEqual(findColourLiteralsInFile(post), ['#fff']);
+});
+
+test('still flags a real CSS block inside a file', () => {
+	const astroFile = '---\nconst x = 1;\n---\n<style>\n .foo { color: blue; }\n</style>';
+	assert.deepEqual(
+		findColourLiteralsInFile(astroFile).map((s) => s.toLowerCase()),
+		['blue'],
+	);
 });
