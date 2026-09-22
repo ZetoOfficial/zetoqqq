@@ -1,0 +1,162 @@
+name: Deploy
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      release:
+        description: >-
+          Откат: короткий SHA уже выкаченного релиза (например 1fc01ee).
+          Пусто — собрать и выкатить текущий master.
+        required: false
+        default: ''
+
+# Два деплоя одновременно переключали бы симлинк `current` наперегонки.
+# cancel-in-progress: false, а не true, потому что отменённый на середине
+# rsync оставил бы недописанный каталог релиза.
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  SITE_ROOT: /var/www/zetoqqq.ru
+  KEEP_RELEASES: 5
+
+jobs:
+  test:
+    # При откате собирать и проверять нечего — выкатывается уже готовый релиз,
+    # который когда-то эти же проверки прошёл.
+    if: ${{ !inputs.release }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # package.json объявляет engines >=22.12. Берём 24: стриппинг типов
+          # там включён по умолчанию и уже не экспериментально сырой, а тесты
+          # импортируют src/lib/*.ts напрямую.
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npx astro check
+
+      - name: Unit-тесты
+        run: npm run test:unit
+
+  deploy:
+    needs: test
+    # !cancelled() глушит неявный success(), который GitHub подставляет к любому
+    # if:, не начинающемуся со status-функции. Без него job `test`, пропущенный
+    # при откате, считался бы неуспешным и deploy не запустился бы вовсе.
+    # При этом ручная отмена прогона по-прежнему останавливает деплой.
+    if: >-
+      !cancelled()
+      && github.ref == 'refs/heads/master'
+      && (needs.test.result == 'success' || inputs.release != '')
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Определить релиз
+        id: rel
+        run: |
+          RELEASE="${{ inputs.release }}"
+          # Имя каталога релиза — короткий SHA, тот же, что показывает
+          # git log --oneline: так каталог на сервере сопоставляется с
+          # коммитом глазами, без сверки сорока символов.
+          [ -n "$RELEASE" ] || RELEASE="${GITHUB_SHA:0:7}"
+          echo "id=$RELEASE" >> "$GITHUB_OUTPUT"
+          echo "Релиз: $RELEASE"
+
+      - uses: actions/setup-node@v4
+        if: ${{ !inputs.release }}
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Собрать сайт
+        if: ${{ !inputs.release }}
+        run: |
+          npm ci
+          npm run build
+
+      - name: Настроить SSH
+        run: |
+          set -e
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.SERVER_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+          # Пустой known_hosts означает, что keyscan не достучался до сервера.
+          # Без этой проверки ssh упал бы ниже с невнятным host key verification failed.
+          [ -s ~/.ssh/known_hosts ] || { echo "ssh-keyscan не получил ключ хоста — сервер недоступен?"; exit 1; }
+
+      - name: Залить релиз
+        if: ${{ !inputs.release }}
+        run: |
+          RELEASE="${{ steps.rel.outputs.id }}"
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes" \
+            dist/ \
+            "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:$SITE_ROOT/releases/$RELEASE/"
+
+      - name: Переключить симлинк и подчистить старые релизы
+        run: |
+          RELEASE="${{ steps.rel.outputs.id }}"
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes \
+            "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" \
+            "SITE_ROOT='$SITE_ROOT' RELEASE='$RELEASE' KEEP='$KEEP_RELEASES' bash -s" <<'REMOTE'
+          set -euo pipefail
+
+          if [ ! -d "$SITE_ROOT/releases/$RELEASE" ]; then
+            echo "Релиза $RELEASE на сервере нет. Доступные:"
+            ls -1t "$SITE_ROOT/releases"
+            exit 1
+          fi
+
+          # ln -sfn на существующий симлинк не атомарен, поэтому создаём
+          # временный и переносим его поверх: rename(2) атомарен, и никакой
+          # запрос не увидит момента, когда current не существует.
+          ln -sfn "$SITE_ROOT/releases/$RELEASE" "$SITE_ROOT/current.tmp"
+          mv -T "$SITE_ROOT/current.tmp" "$SITE_ROOT/current"
+
+          # Оставляем KEEP самых свежих, но текущий не трогаем никогда —
+          # при откате на старый релиз он мог бы не попасть в свежие.
+          # grep возвращает 1, когда отфильтровывать нечего (в releases лежит
+          # только current) — при set -o pipefail это уронило бы весь деплой
+          # уже после успешного переключения. Отсюда || true.
+          cd "$SITE_ROOT/releases"
+          CURRENT=$(basename "$(readlink -f "$SITE_ROOT/current")")
+          ls -1t | grep -vxF "$CURRENT" | tail -n "+$KEEP" | xargs -r rm -rf || true
+
+          echo "current -> $(readlink -f "$SITE_ROOT/current")"
+          ls -1t "$SITE_ROOT/releases"
+          REMOTE
+
+      - name: Smoke test
+        run: |
+          set -e
+          code=$(curl -sS -o /tmp/home.html -w '%{http_code}' --retry 3 --retry-delay 2 https://zetoqqq.ru/)
+          [ "$code" = "200" ] || { echo "/ вернул $code"; exit 1; }
+          # Пустой 200 — это ровно то, что отдавала заглушка до появления сайта,
+          # поэтому недостаточно проверить только код ответа.
+          grep -q '</html>' /tmp/home.html || { echo "/ отдал не HTML-страницу"; head -c 400 /tmp/home.html; exit 1; }
+
+          for path in /projects/ /blog/ /rss.xml; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' "https://zetoqqq.ru$path")
+            [ "$code" = "200" ] || { echo "$path вернул $code"; exit 1; }
+          done
+
+          # /hh_ok — чужой сервис на том же домене, живший там до сайта.
+          # 400 "missing code" это его штатный ответ без query-параметра;
+          # важно лишь, что отвечает он, а не 404 от nginx.
+          curl -sS https://zetoqqq.ru/hh_ok | grep -q 'missing code' \
+            || { echo "/hh_ok сломан — проверь nginx-конфиг"; exit 1; }
+
+          echo "Выкачен релиз ${{ steps.rel.outputs.id }}"
