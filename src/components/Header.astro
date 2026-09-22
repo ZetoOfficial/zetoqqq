@@ -37,6 +37,10 @@ const isHome = Astro.url.pathname === '/';
 	.name {
 		margin: 0;
 		font-size: var(--fs-xl);
+		/* Pinned because Header renders the name as <h1> on / and <p> elsewhere,
+		   and those inherit different line-heights from global.css. Without this
+		   the whole header shifts between pages. */
+		line-height: var(--lh-tight);
 		font-weight: 600;
 		letter-spacing: -0.01em;
 	}

@@ -35,6 +35,22 @@ body {
 	padding: 0 var(--sp-4);
 }
 
+/*
+ * Where content starts belongs to the layout, not to whichever element happens
+ * to come first: the homepage opens with a <p> (no top margin) while /about
+ * and /projects open with an <h1> (a --sp-6 top margin), so without this the
+ * pages begin at visibly different heights.
+ *
+ * The second selector is not redundant. On a project detail page main's first
+ * child is an <article> whose own first child is the <h1>; with no border or
+ * padding between them the heading's top margin collapses out through the
+ * article, so zeroing only the outer element leaves the gap in place.
+ */
+main > :first-child,
+main > :first-child > :first-child {
+	margin-top: 0;
+}
+
 /* Headings ----------------------------------------------------------- */
 
 h1,
