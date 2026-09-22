@@ -51,6 +51,15 @@ main > :first-child > :first-child {
 	margin-top: 0;
 }
 
+/*
+ * Having zeroed that margin, the layout owns the air above the first block.
+ * Selector is `main.column`, not `main`: .column sets the padding shorthand
+ * and would otherwise win on specificity and reset this to zero.
+ */
+main.column {
+	padding-top: var(--sp-5);
+}
+
 /* Headings ----------------------------------------------------------- */
 
 h1,

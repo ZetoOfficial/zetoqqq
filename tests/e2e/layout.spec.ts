@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { profile } from '../../src/data/profile';
 
 /**
  * The header is rendered by one component on every page, but `Header.astro`
@@ -62,12 +63,47 @@ test('content starts the same distance below the nav on every page', async ({ pa
 	}
 
 	const reference = seen['/'];
+
+	// Equality alone would be satisfied by every page having no gap at all,
+	// which is what the first version of this layout did. The heading needs
+	// air above it, so pin that the gap is real.
+	expect(reference, 'gap between nav rule and first content').toBeGreaterThanOrEqual(16);
+
 	for (const path of PAGES) {
 		expect(seen[path], `${path}: gap between nav rule and first content`).toBeCloseTo(
 			reference,
 			1,
 		);
 	}
+});
+
+test('the header carries every elsewhere link, read from profile.ts', async ({ page }) => {
+	await page.goto('/');
+	const header = page.locator('header');
+
+	for (const link of profile.links) {
+		const anchor = header.getByRole('link', { name: link.label, exact: true });
+		await expect(anchor, `header link: ${link.label}`).toHaveCount(1);
+		await expect(anchor).toHaveAttribute('href', link.href);
+		await expect(anchor).toHaveAttribute('rel', /\bme\b/);
+	}
+});
+
+test('the elsewhere links sit to the right of the site navigation', async ({ page }) => {
+	await page.goto('/');
+	const lastInternal = await page
+		.locator('header nav a[href="/about"]')
+		.boundingBox();
+	const firstExternal = await page
+		.locator('header nav a[rel~="me"]')
+		.first()
+		.boundingBox();
+
+	expect(lastInternal).not.toBeNull();
+	expect(firstExternal).not.toBeNull();
+	// Same row, external group further right.
+	expect(firstExternal!.y).toBeCloseTo(lastInternal!.y, 0);
+	expect(firstExternal!.x).toBeGreaterThan(lastInternal!.x + lastInternal!.width);
 });
 
 test('the name renders as h1 only on the homepage, without changing its metrics', async ({
