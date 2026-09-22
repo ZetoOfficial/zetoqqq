@@ -19,7 +19,10 @@
 	--selection: #dce7f1;
 
 	/* Type */
-	--font-mono: var(--font-ibm-plex-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+	/* `--font-ibm-plex-mono` already carries the ui-monospace/SFMono-Regular/
+	   Menlo fallback chain configured in astro.config.mjs; only the generic
+	   last resort is repeated here. */
+	--font-mono: var(--font-ibm-plex-mono), monospace;
 	--fs-xs: 0.6875rem;
 	--fs-sm: 0.8125rem;
 	--fs-base: 0.9375rem;
