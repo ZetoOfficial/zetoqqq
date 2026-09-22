@@ -26,7 +26,7 @@ are settled.
 | Decision | Choice |
 |---|---|
 | Typographic direction | Mono ledger — monospace throughout |
-| Typeface | IBM Plex Mono (400, 600, 400 italic), self-hosted |
+| Typeface | IBM Plex Mono, weights 400/600 with italic, self-hosted |
 | Surface | Light default, dark available, OS-driven with manual override |
 | Accent | Ink blue — `#2b5c8a` light, `#7fa8cf` dark |
 | Accent usage | Link underlines, active nav item, focus rings only |
