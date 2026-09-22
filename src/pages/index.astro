@@ -5,19 +5,20 @@ import Section from '../components/Section.astro';
 import { SITE_DESCRIPTION } from '../consts';
 import { profile } from '../data/profile';
 import Base from '../layouts/Base.astro';
+import { sortPosts } from '../lib/posts';
 import { sortProjects } from '../lib/projects';
 
 const projects = sortProjects(await getCollection('projects')).slice(0, 3);
-
-const posts = (await getCollection('blog')).sort(
-	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
-);
-const recentPosts = posts.slice(0, 4);
+const recentPosts = sortPosts(await getCollection('blog')).slice(0, 4);
 ---
 
 <Base title={profile.name} description={SITE_DESCRIPTION}>
 	{/* TODO: Pavel — this intro is drafted from your CV. Rewrite it in your
-	    own voice; it is the first thing anyone reads. */}
+	    own voice; it is the first thing anyone reads. Note that the second
+	    paragraph links to /projects/ai-interviewer/ by a hardcoded slug — the
+	    Projects section below is generated from the collection, but this one
+	    is not. If that Markdown file is renamed, drafted or deleted, update
+	    the link here too or it 404s. */}
 	<p>
 		Hi, I&rsquo;m Pavel. I write Go for a living: distributed services and the
 		unglamorous production automation that keeps them upright. Five years of it,
