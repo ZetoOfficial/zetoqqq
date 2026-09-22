@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { sortProjects } from '../src/lib/projects.ts';
+import { isPublished, sortProjects } from '../src/lib/projects.ts';
 
 const entry = (id, date, draft) => ({ id, data: { date: new Date(date), draft } });
 
@@ -34,4 +34,12 @@ test('does not mutate its input', () => {
 		input.map((e) => e.id),
 		['a', 'b'],
 	);
+});
+
+test('isPublished pins draft/non-draft/absent-draft as false/true/true', () => {
+	assert.equal(isPublished({ data: { draft: true } }), false);
+	assert.equal(isPublished({ data: { draft: false } }), true);
+	// A hand-built fixture with no `draft` key at all, unlike a real entry
+	// where the Zod schema defaults it to `false`.
+	assert.equal(isPublished({ data: {} }), true);
 });

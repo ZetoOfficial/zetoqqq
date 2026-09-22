@@ -2,10 +2,11 @@
 import { type CollectionEntry, getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
+import { isPublished } from '../../lib/projects';
 
 export async function getStaticPaths() {
 	const projects = await getCollection('projects');
-	return projects.map((project) => ({
+	return projects.filter(isPublished).map((project) => ({
 		params: { slug: project.id },
 		props: project,
 	}));
