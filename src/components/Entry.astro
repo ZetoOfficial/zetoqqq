@@ -1,0 +1,49 @@
+---
+interface Props {
+	title: string;
+	href: string;
+	meta?: string;
+	blurb?: string;
+	tags?: string[];
+	external?: boolean;
+}
+
+const { title, href, meta, blurb, tags, external = false } = Astro.props;
+---
+
+<article>
+	<h3>
+		<a href={href} {...external ? { target: '_blank', rel: 'noopener' } : {}}>
+			{title}
+		</a>
+	</h3>
+	{meta && <p class="dim meta">{meta}</p>}
+	{blurb && <p class="blurb">{blurb}</p>}
+	{
+		tags && tags.length > 0 && (
+			<p class="dim tags">{tags.map((tag) => `#${tag}`).join(' ')}</p>
+		)
+	}
+</article>
+
+<style>
+	article {
+		margin-bottom: var(--sp-4);
+	}
+	h3 {
+		margin: 0;
+		font-size: var(--fs-base);
+		font-weight: 600;
+	}
+	.meta,
+	.tags {
+		margin: 0;
+	}
+	.blurb {
+		margin: var(--sp-1) 0 0;
+	}
+	.tags {
+		margin-top: var(--sp-1);
+		font-size: var(--fs-xs);
+	}
+</style>
