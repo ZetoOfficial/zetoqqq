@@ -29,6 +29,26 @@ test('the toggle flips the theme and persists it across a reload', async ({ page
 	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 });
 
+test("the toggle's accessible name describes the action and updates on click", async ({ page }) => {
+	await page.emulateMedia({ colorScheme: 'light' });
+	await page.goto('/');
+
+	// /theme/i must still resolve to exactly one control after the name
+	// becomes state-dependent ("Switch to dark theme" / "Switch to light
+	// theme") rather than the static "Toggle theme" -- confirmed, not
+	// assumed, since the other specs rely on this same locator.
+	const toggle = page.getByRole('button', { name: /theme/i });
+	await expect(toggle).toHaveAccessibleName('Switch to dark theme');
+
+	await toggle.click();
+	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+	await expect(toggle).toHaveAccessibleName('Switch to light theme');
+
+	await toggle.click();
+	await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+	await expect(toggle).toHaveAccessibleName('Switch to dark theme');
+});
+
 test('the stored theme is applied before first paint', async ({ page }) => {
 	await page.emulateMedia({ colorScheme: 'light' });
 	await page.goto('/');
@@ -58,6 +78,12 @@ test('the theme script is a genuine inline script that runs before any styling',
 	const scriptTagPattern = /<script([^>]*)>([\s\S]*?)<\/script>/g;
 	let themeScript: { attrs: string; index: number } | null = null;
 	let match: RegExpExecArray | null;
+	// Matching the literal `localStorage.getItem('theme')` source is a
+	// deliberate coupling to this implementation detail, not an oversight --
+	// it's how this test finds the specific script it needs to inspect among
+	// possibly several in <head>. If the no-flash head script is refactored
+	// (renamed key, restructured read), update this pattern to match the new
+	// source rather than loosening it to "any script" or dropping the check.
 	while ((match = scriptTagPattern.exec(head))) {
 		if (/localStorage\.getItem\((['"`])theme\1\)/.test(match[2])) {
 			themeScript = { attrs: match[1], index: match.index };

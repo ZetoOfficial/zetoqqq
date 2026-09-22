@@ -1,10 +1,16 @@
-<button id="theme-toggle" type="button" aria-live="polite">
+<button id="theme-toggle" type="button">
 	<span class="sr-only">Toggle theme</span>
 	<span aria-hidden="true" data-icon>◐</span>
 </button>
 
 <script>
 	const button = document.getElementById('theme-toggle');
+	// The .sr-only span is the button's sole accessible-name source. Its
+	// server-rendered "Toggle theme" text is a fallback for the moment
+	// before this script runs -- before hydration the button can't know
+	// the resolved theme anyway. Do not also set aria-label: a screen
+	// reader would read one and silently drop the other.
+	const label = button?.querySelector<HTMLElement>('.sr-only');
 
 	function current(): 'light' | 'dark' {
 		const explicit = document.documentElement.dataset.theme;
@@ -14,9 +20,24 @@
 			: 'light';
 	}
 
+	// Names the action a click performs (which theme it switches TO), not
+	// the current state -- a descriptive name that stays meaningful without
+	// needing aria-pressed, since this switches between two named themes
+	// rather than toggling a single on/off state.
+	function describe(theme: 'light' | 'dark'): string {
+		return theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme';
+	}
+
+	function setLabel(theme: 'light' | 'dark') {
+		if (label) label.textContent = describe(theme);
+	}
+
+	setLabel(current());
+
 	button?.addEventListener('click', () => {
 		const next = current() === 'dark' ? 'light' : 'dark';
 		document.documentElement.dataset.theme = next;
+		setLabel(next);
 		try {
 			localStorage.setItem('theme', next);
 		} catch {
