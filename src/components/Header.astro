@@ -26,7 +26,20 @@ const isHome = Astro.url.pathname === '/';
 	<p class="role dim">{profile.role} &mdash; {profile.location}</p>
 	<nav aria-label="Primary">
 		<span class="site">
-			{nav.map((item) => <HeaderLink href={item.href}>{item.label}</HeaderLink>)}
+			{
+				nav.map((item) =>
+					item.pending ? (
+						<span class="pending" data-hint="soon...">
+							{item.label}
+							{/* The hover hint is unreachable without a pointer, so the
+							    same fact is stated for assistive technology. */}
+							<span class="sr-only"> &mdash; coming soon</span>
+						</span>
+					) : (
+						<HeaderLink href={item.href}>{item.label}</HeaderLink>
+					),
+				)
+			}
 		</span>
 		<span class="elsewhere">
 			{
@@ -79,6 +92,25 @@ const isHome = Astro.url.pathname === '/';
 	/* Pushes the elsewhere group and the theme toggle to the right edge. */
 	.elsewhere {
 		margin-left: auto;
+	}
+	.pending {
+		position: relative;
+		color: var(--ink-dim);
+		cursor: default;
+	}
+	.pending:hover::after {
+		content: attr(data-hint);
+		position: absolute;
+		top: 100%;
+		left: 0;
+		z-index: 1;
+		margin-top: var(--sp-1);
+		padding: var(--sp-1) var(--sp-2);
+		background: var(--bg-subtle);
+		border: 1px solid var(--rule);
+		color: var(--ink-dim);
+		font-size: var(--fs-xs);
+		white-space: nowrap;
 	}
 	.elsewhere a {
 		color: var(--ink-dim);

@@ -9,12 +9,12 @@ import { profile } from '../../src/data/profile';
  * line-height on `.name` the whole header shifts between pages.
  *
  * Likewise `main`'s first child differs by page — a <p> on the homepage, an
- * <h1> on /about and /projects — and those carry different top margins, so the
+ * <h1> on /projects — and those carry different top margins, so the
  * distance from the nav rule to the first line of content has to be owned by
  * the layout rather than left to whichever element happens to come first.
  */
 
-const PAGES = ['/', '/about', '/projects', '/projects/ai-interviewer', '/blog'];
+const PAGES = ['/', '/projects', '/projects/ai-interviewer', '/blog'];
 
 type Geometry = {
 	nameHeight: number;
@@ -92,7 +92,7 @@ test('the header carries every elsewhere link, read from profile.ts', async ({ p
 test('the elsewhere links sit to the right of the site navigation', async ({ page }) => {
 	await page.goto('/');
 	const lastInternal = await page
-		.locator('header nav a[href="/about"]')
+		.locator('header nav a[href="/projects"]')
 		.boundingBox();
 	const firstExternal = await page
 		.locator('header nav a[rel~="me"]')

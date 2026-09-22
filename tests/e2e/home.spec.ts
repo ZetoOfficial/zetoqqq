@@ -39,9 +39,25 @@ test('the writing section and nav item track whether the blog has posts', async 
 
 	await page.goto('/');
 	await expect(page.locator('main h2', { hasText: /^writing$/i })).toHaveCount(expectedCount);
+
+	// The nav always lists `blog`; what changes is whether it is a link or a
+	// pending item, so assert both sides rather than only the link's absence.
 	await expect(
-		page.getByRole('navigation').getByRole('link', { name: 'writing' }),
+		page.getByRole('navigation').getByRole('link', { name: 'blog' }),
 	).toHaveCount(expectedCount);
+	await expect(page.locator('header nav .pending')).toHaveCount(hasPosts ? 0 : 1);
+});
+
+test('the pending blog item announces itself to assistive technology', async ({ page }) => {
+	const hasPosts = await blogHasPosts(page);
+	test.skip(hasPosts, 'the blog item is a real link once posts exist');
+
+	await page.goto('/');
+	const pending = page.locator('header nav .pending');
+	await expect(pending).toHaveAttribute('data-hint', 'soon...');
+	// The visible hint only appears on hover, so the fact has to be in the
+	// accessible name too.
+	await expect(pending).toHaveText(/coming soon/);
 });
 
 test('is not a portfolio landing page', async ({ page }) => {

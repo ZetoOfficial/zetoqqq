@@ -5,8 +5,8 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'no
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-// The homepage's `Writing` section and the nav's `writing` item render only
-// when the blog collection is non-empty. `tests/nav.test.js` covers
+// The homepage's `Writing` section renders, and the nav's `blog` item stops
+// being pending, only when the blog collection is non-empty. `tests/nav.test.js` covers
 // `buildNav(true)`, but that is a pure function over a boolean — the branch
 // that matters is `recentPosts.length > 0 &&` in src/pages/index.astro, and
 // a unit test can never execute it. With an empty collection the happy path
@@ -60,7 +60,7 @@ function cleanUp(outDir) {
 }
 
 test(
-	'a post in the blog collection makes the Writing section and nav item render',
+	'a post in the blog collection makes the Writing section render and the nav item active',
 	// A full `astro build` is slow, and slower still on a cold content-layer
 	// cache; node:test's 30s default would flake long before the build is
 	// genuinely stuck.
@@ -100,8 +100,8 @@ test(
 			);
 			assert.match(
 				html,
-				/<a[^>]*href="\/blog"[^>]*>\s*writing\s*<\/a>/,
-				'expected a nav link to /blog labelled "writing" once a post exists',
+				/<a[^>]*href="\/blog"[^>]*>\s*blog\s*<\/a>/,
+				'expected the nav blog item to become a real link once a post exists',
 			);
 			for (const fixture of FIXTURES) {
 				assert.ok(

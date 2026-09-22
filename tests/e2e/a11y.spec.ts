@@ -2,7 +2,6 @@ import { type Page, expect, test } from '@playwright/test';
 
 const PAGES = [
 	'/',
-	'/about',
 	'/projects',
 	// The one route with an <hr>, external links and rendered Markdown — the
 	// most likely to overflow at 375px, so it gets swept with the rest.
@@ -53,7 +52,7 @@ async function inkAgainstBackground(page: Page, selector: string) {
 	}, selector);
 }
 
-// Primary ink: an ordinary paragraph on /about. Dimmed ink (--ink-dim): the
+// Primary ink: an ordinary paragraph on /projects. Dimmed ink (--ink-dim): the
 // `.dim` class is what post dates, Entry's meta/tags lines and the /blog
 // empty state render in, and it sits far closer to the AA floor than primary
 // ink does.
@@ -65,11 +64,11 @@ async function inkAgainstBackground(page: Page, selector: string) {
 // keeps measuring the same token — which is why this needs no branch on
 // published-post state.
 async function assertAaContrast(page: Page, label: string) {
-	await page.goto('/about');
+	await page.goto('/projects');
 	const primary = await inkAgainstBackground(page, 'main p');
 	expect(
 		contrastRatio(primary.fg, primary.bg),
-		`${label} primary-ink body contrast (main p, /about)`,
+		`${label} primary-ink body contrast (main p, /projects)`,
 	).toBeGreaterThanOrEqual(4.5);
 
 	await page.goto('/blog');
