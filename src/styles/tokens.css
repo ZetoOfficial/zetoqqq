@@ -1,0 +1,74 @@
+/*
+ * Design tokens. This is the ONLY file in the project allowed to contain
+ * literal colour values — `npm run test:unit` enforces that.
+ *
+ * Every colour is declared three times: once for light, once for users whose
+ * OS prefers dark (unless they have explicitly chosen light), and once for an
+ * explicit [data-theme="dark"] from the toggle.
+ */
+
+:root {
+	/* Colour — light */
+	--bg: #fbfbf9;
+	--bg-subtle: #f3f3ef;
+	--ink: #16161a;
+	--ink-dim: #6f6f78;
+	--rule: #e4e4e7;
+	--accent: #2b5c8a;
+	--accent-hover: #1d4467;
+	--selection: #dce7f1;
+
+	/* Type */
+	--font-mono: var(--font-ibm-plex-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+	--fs-xs: 0.6875rem;
+	--fs-sm: 0.8125rem;
+	--fs-base: 0.9375rem;
+	--fs-lg: 1.125rem;
+	--fs-xl: 1.5rem;
+	--lh-tight: 1.25;
+	--lh-base: 1.7;
+	--lh-loose: 1.9;
+
+	/* Space */
+	--sp-1: 0.25rem;
+	--sp-2: 0.5rem;
+	--sp-3: 0.75rem;
+	--sp-4: 1rem;
+	--sp-5: 1.5rem;
+	--sp-6: 2rem;
+	--sp-7: 3rem;
+	--sp-8: 4.5rem;
+
+	/* Layout */
+	--measure: 38rem;
+
+	color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme='light']) {
+		--bg: #111113;
+		--bg-subtle: #191920;
+		--ink: #e5e5e1;
+		--ink-dim: #8b8b94;
+		--rule: #26262c;
+		--accent: #7fa8cf;
+		--accent-hover: #a6c4de;
+		--selection: #24384a;
+
+		color-scheme: dark;
+	}
+}
+
+:root[data-theme='dark'] {
+	--bg: #111113;
+	--bg-subtle: #191920;
+	--ink: #e5e5e1;
+	--ink-dim: #8b8b94;
+	--rule: #26262c;
+	--accent: #7fa8cf;
+	--accent-hover: #a6c4de;
+	--selection: #24384a;
+
+	color-scheme: dark;
+}
