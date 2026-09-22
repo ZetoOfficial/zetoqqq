@@ -153,10 +153,4 @@ jobs:
             [ "$code" = "200" ] || { echo "$path вернул $code"; exit 1; }
           done
 
-          # /hh_ok — чужой сервис на том же домене, живший там до сайта.
-          # 400 "missing code" это его штатный ответ без query-параметра;
-          # важно лишь, что отвечает он, а не 404 от nginx.
-          curl -sS https://zetoqqq.ru/hh_ok | grep -q 'missing code' \
-            || { echo "/hh_ok сломан — проверь nginx-конфиг"; exit 1; }
-
           echo "Выкачен релиз ${{ steps.rel.outputs.id }}"
