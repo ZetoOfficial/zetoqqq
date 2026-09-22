@@ -1,8 +1,63 @@
 ---
-import Base from '../layouts/Base.astro';
+import Page from '../layouts/Page.astro';
 ---
 
-<Base title="About">
-	<h1>About</h1>
-	<p>Placeholder — this page is built in Task 8.</p>
-</Base>
+<Page
+	title="About"
+	description="Pavel Titov — Go backend engineer, five years across fintech and e-commerce, now working on LLM agents."
+>
+	{/* TODO: Pavel — everything below is drafted from your CV in a plainer
+	    register. Keep the structure, replace the voice. */}
+	<p>
+		I&rsquo;m a backend engineer. I&rsquo;ve spent about five years writing Go
+		for systems where being wrong is expensive &mdash; payments, checkout,
+		warehouse logistics &mdash; which is a specific kind of education.
+	</p>
+
+	<h2>What I actually do</h2>
+	<p>
+		Distributed services and the operational work around them: finding out why
+		something degraded, writing the postmortem, and then doing the unglamorous
+		part where the fix reaches production. At Tabby I chased a chronic memory
+		leak in checkout that was driving 5xx rates up, ran the incident and the
+		root-cause analysis, and saw the correction through. I also split checkout
+		from payments behind adapters so a legacy dual-write could finally be
+		retired.
+	</p>
+	<p>
+		Before that, at T-Bank, I built a gRPC streaming API for managing data
+		collection agents, which replaced a set of manual SRE operations, and cut
+		GitLab CI/CD times by 40&ndash;60%. At Wildberries I designed and launched
+		the PartnerSC backend from nothing &mdash; more than fifty services &mdash;
+		and led architecture reviews as it grew.
+	</p>
+
+	<h2>Where I&rsquo;m going</h2>
+	<p>
+		Toward LLM and agentic systems. Not the demo kind &mdash; the kind that has
+		to run unattended, be evaluated honestly, and fail in ways you can debug. I
+		want to build harnesses and agents that investigate incidents and test
+		software, which is the same reliability problem I already know wearing
+		different clothes.
+	</p>
+	<p>
+		I&rsquo;m starting a master&rsquo;s in artificial intelligence at ITMO&rsquo;s
+		AI Talent Hub (2026&ndash;2028). My bachelor&rsquo;s is in software
+		engineering from TyumGU (2021&ndash;2025).
+	</p>
+
+	<h2>Tools</h2>
+	<p>
+		Go and Python day to day. PostgreSQL, Redis, ClickHouse, Kafka, NATS.
+		Docker, Kubernetes, Helm. Prometheus, Grafana, Loki, OpenTelemetry &mdash;
+		enough observability to have opinions about it. FastAPI and LangGraph for
+		the LLM work.
+	</p>
+
+	<h2>Elsewhere</h2>
+	<p>
+		The fastest way to reach me is <a href="mailto:zetoqqq@gmail.com">email</a>.
+		I&rsquo;m also on <a href="https://github.com/ZetoOfficial" rel="me noopener">GitHub</a>
+		and <a href="https://linkedin.com/in/zetoqqq" rel="me noopener">LinkedIn</a>.
+	</p>
+</Page>
