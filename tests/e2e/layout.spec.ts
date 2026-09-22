@@ -120,3 +120,14 @@ test('the name renders as h1 only on the homepage, without changing its metrics'
 	await expect(page.locator('h1')).toHaveCount(1);
 	await expect(page.locator('main h1')).toHaveCount(1);
 });
+
+test('the role line is composed from profile.ts, and claims no location', async ({ page }) => {
+	await page.goto('/');
+	const role = page.locator('header p.role');
+
+	await expect(role).toHaveText(`${profile.role} \u2014 ${profile.tagline}`);
+
+	// The tagline replaced a `location` field that had stopped being true.
+	// Pinning the absence keeps a city from creeping back in by habit.
+	await expect(role).not.toHaveText(/Dubai|remote/i);
+});
