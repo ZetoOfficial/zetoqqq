@@ -23,7 +23,14 @@ test('is not a portfolio landing page', async ({ page }) => {
 
 test('links to both project detail pages', async ({ page }) => {
 	await page.goto('/');
-	await page.getByRole('link', { name: 'AI Interviewer' }).click();
+	// Scope to the Projects section itself rather than searching the whole
+	// page: the intro prose also mentions "AI Interviewer" by name (and
+	// links to it), so an unscoped locator is ambiguous about which link it
+	// clicks. The Projects section is the thing under test here.
+	const projectsSection = page
+		.locator('main section')
+		.filter({ has: page.getByRole('heading', { level: 2, name: /projects/i }) });
+	await projectsSection.getByRole('link', { name: 'AI Interviewer' }).click();
 	await expect(page).toHaveURL(/\/projects\/ai-interviewer\/?$/);
 	await expect(page.locator('h1')).toHaveText('AI Interviewer');
 });
