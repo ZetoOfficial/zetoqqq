@@ -1,5 +1,14 @@
 import { expect, test } from '@playwright/test';
 
+// The two literal rgb() values below mirror `--bg` in each theme:
+// rgb(251, 251, 249) is the light `#fbfbf9` and rgb(17, 17, 19) the dark
+// `#111113`, both from src/styles/tokens.css. They live here rather than
+// in a token because this file asserts on *computed* style — the point is
+// to catch a token that silently stopped applying, which reading the token
+// back cannot do. Retuning either `--bg` means updating the matching value
+// here in the same commit. (These are test files, outside the `src/` tree
+// the no-hardcoded-colour guard walks, so nothing else flags the drift.)
+
 test('defaults to light when the OS prefers light', async ({ page }) => {
 	await page.emulateMedia({ colorScheme: 'light' });
 	await page.goto('/');
