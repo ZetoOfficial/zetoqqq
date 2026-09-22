@@ -1,5 +1,14 @@
 ---
+import { profile } from '../data/profile';
 import Page from '../layouts/Page.astro';
+
+// profile.ts is the single source of truth for identity — this page states
+// the prose, never the URLs.
+const linkTo = (label: string): string => {
+	const link = profile.links.find((l) => l.label === label);
+	if (!link) throw new Error(`profile.links has no "${label}" entry`);
+	return link.href;
+};
 ---
 
 <Page
@@ -56,8 +65,8 @@ import Page from '../layouts/Page.astro';
 
 	<h2>Elsewhere</h2>
 	<p>
-		The fastest way to reach me is <a href="mailto:zetoqqq@gmail.com">email</a>.
-		I&rsquo;m also on <a href="https://github.com/ZetoOfficial" rel="me noopener">GitHub</a>
-		and <a href="https://linkedin.com/in/zetoqqq" rel="me noopener">LinkedIn</a>.
+		The fastest way to reach me is <a href={linkTo('email')}>email</a>.
+		I&rsquo;m also on <a href={linkTo('github')} rel="me noopener">GitHub</a>
+		and <a href={linkTo('linkedin')} rel="me noopener">LinkedIn</a>.
 	</p>
 </Page>
