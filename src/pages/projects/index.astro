@@ -1,0 +1,30 @@
+---
+import { getCollection } from 'astro:content';
+import Entry from '../../components/Entry.astro';
+import Base from '../../layouts/Base.astro';
+import { sortProjects } from '../../lib/projects';
+
+const projects = sortProjects(await getCollection('projects'));
+---
+
+<Base
+	title="Projects"
+	description="Things Pavel Titov has built, with notes on what was actually hard about them."
+>
+	<h1>Projects</h1>
+	<p>
+		Things I&rsquo;ve built, with notes on what was actually hard about them
+		rather than what they do.
+	</p>
+
+	{
+		projects.map((project) => (
+			<Entry
+				title={project.data.title}
+				href={`/projects/${project.id}/`}
+				meta={project.data.stack.join(' · ')}
+				blurb={project.data.summary}
+			/>
+		))
+	}
+</Base>

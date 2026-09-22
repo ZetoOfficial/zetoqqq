@@ -1,46 +1,36 @@
-# Astro Starter Kit: Basics
+# zetoqqq
 
-```sh
-npm create astro@latest -- --template basics
-```
+Pavel Titov's personal site. Astro, no framework components, no CSS
+framework.
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## Commands
 
-## 🚀 Project Structure
+| Command | Action |
+| :-- | :-- |
+| `npm install` | Install dependencies |
+| `npm run dev` | Dev server at `localhost:4321` |
+| `npm run build` | Build to `./dist/` |
+| `npm run preview` | Preview the build |
+| `npm run astro` | Run Astro CLI commands (e.g. `astro check`) |
+| `npm run test:unit` | Unit tests (`node --test`) |
+| `npm run test:e2e` | Browser tests (Playwright) |
+| `npm test` | Both |
 
-Inside of your Astro project, you'll see the following folders and files:
+## How the visual system works
 
-```text
-/
-├── public/
-│   └── favicon.svg
-├── src
-│   ├── assets
-│   │   └── astro.svg
-│   ├── components
-│   │   └── Welcome.astro
-│   ├── layouts
-│   │   └── Layout.astro
-│   └── pages
-│       └── index.astro
-└── package.json
-```
+`src/styles/tokens.css` holds every colour, type step and spacing value
+as a CSS custom property, declared once for light and twice for dark
+(OS preference and explicit toggle). **It is the only file allowed to
+contain a literal colour** — `npm run test:unit` fails the build
+otherwise. That rule is what lets a new page inherit the system without
+being re-audited for theme support.
 
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
+`src/styles/global.css` styles bare semantic elements against those
+tokens, so Markdown renders correctly with no component work.
 
-## 🧞 Commands
+Adding a project means adding a Markdown file to
+`src/content/projects/`. Adding a post means adding one to
+`src/content/blog/` — the first post you commit makes the Writing
+section and the nav item appear on their own.
 
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+Design notes: `docs/superpowers/specs/2026-09-22-personal-homepage-design.md`

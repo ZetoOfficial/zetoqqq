@@ -1,11 +1,65 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+import Entry from '../components/Entry.astro';
+import Section from '../components/Section.astro';
+import { SITE_DESCRIPTION } from '../consts';
+import { profile } from '../data/profile';
+import Base from '../layouts/Base.astro';
+import { sortPosts } from '../lib/posts';
+import { sortProjects } from '../lib/projects';
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+const projects = sortProjects(await getCollection('projects')).slice(0, 3);
+const recentPosts = sortPosts(await getCollection('blog')).slice(0, 4);
 ---
 
-<Layout>
-	<Welcome />
-</Layout>
+<Base title={profile.name} description={SITE_DESCRIPTION}>
+	{/* TODO: Pavel — this intro is drafted from your CV. Rewrite it in your
+	    own voice; it is the first thing anyone reads. Note that the second
+	    paragraph links to /projects/ai-interviewer/ by a hardcoded slug — the
+	    Projects section below is generated from the collection, but this one
+	    is not. If that Markdown file is renamed, drafted or deleted, update
+	    the link here too or it 404s. */}
+	<p>
+		Hi, I&rsquo;m Pavel. I write Go for a living: distributed services and the
+		unglamorous production automation that keeps them upright. Five years of it,
+		mostly fintech and e-commerce.
+	</p>
+	<p>
+		Lately I&rsquo;ve been pulling on a different thread &mdash; LLM agents that
+		can investigate an incident instead of just paging me about it. That is what
+		the <a href="/projects/ai-interviewer/">AI Interviewer</a> work was really about.
+	</p>
+
+	<Section label="Now">
+		<p>{profile.now}</p>
+	</Section>
+
+	<Section label="Projects" href="/projects">
+		{
+			projects.map((project) => (
+				<Entry
+					title={project.data.title}
+					href={`/projects/${project.id}/`}
+					meta={project.data.stack.slice(0, 4).join(' · ')}
+					blurb={project.data.summary}
+				/>
+			))
+		}
+	</Section>
+
+	{
+		recentPosts.length > 0 && (
+			<Section label="Writing" href="/blog">
+				{recentPosts.map((post) => (
+					<Entry
+						title={post.data.title}
+						href={`/blog/${post.id}/`}
+						blurb={post.data.description}
+					/>
+				))}
+			</Section>
+		)
+	}
+
+</Base>
+

@@ -1,0 +1,256 @@
+@import './tokens.css';
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html {
+	background: var(--bg);
+}
+
+body {
+	margin: 0;
+	padding: 0;
+	background: var(--bg);
+	color: var(--ink);
+	font-family: var(--font-mono);
+	font-size: var(--fs-base);
+	line-height: var(--lh-base);
+	font-synthesis: none;
+	-webkit-text-size-adjust: 100%;
+}
+
+::selection {
+	background: var(--selection);
+}
+
+/* Layout ------------------------------------------------------------- */
+
+.column {
+	width: 100%;
+	max-width: var(--measure);
+	margin: 0 auto;
+	padding: 0 var(--sp-4);
+}
+
+/*
+ * Where content starts belongs to the layout, not to whichever element happens
+ * to come first: the homepage opens with a <p> (no top margin) while /about
+ * and /projects open with an <h1> (a --sp-6 top margin), so without this the
+ * pages begin at visibly different heights.
+ *
+ * The second selector is not redundant. On a project detail page main's first
+ * child is an <article> whose own first child is the <h1>; with no border or
+ * padding between them the heading's top margin collapses out through the
+ * article, so zeroing only the outer element leaves the gap in place.
+ */
+main > :first-child,
+main > :first-child > :first-child {
+	margin-top: 0;
+}
+
+/*
+ * Having zeroed that margin, the layout owns the air above the first block.
+ * Selector is `main.column`, not `main`: .column sets the padding shorthand
+ * and would otherwise win on specificity and reset this to zero.
+ */
+main.column {
+	padding-top: var(--sp-5);
+}
+
+/* Headings ----------------------------------------------------------- */
+
+h1,
+h2,
+h3,
+h4 {
+	margin: var(--sp-6) 0 var(--sp-3);
+	font-weight: 600;
+	line-height: var(--lh-tight);
+	letter-spacing: -0.01em;
+	color: var(--ink);
+}
+
+h1 {
+	font-size: var(--fs-xl);
+}
+h2 {
+	font-size: var(--fs-lg);
+}
+h3,
+h4 {
+	font-size: var(--fs-base);
+}
+
+/* Text --------------------------------------------------------------- */
+
+p,
+ul,
+ol,
+blockquote,
+table {
+	margin: 0 0 var(--sp-4);
+}
+
+ul,
+ol {
+	padding-left: var(--sp-5);
+}
+
+li {
+	margin-bottom: var(--sp-2);
+}
+
+blockquote {
+	padding-left: var(--sp-4);
+	border-left: 2px solid var(--rule);
+	color: var(--ink-dim);
+}
+
+strong,
+b {
+	font-weight: 600;
+}
+
+em,
+i {
+	font-style: italic;
+}
+
+small,
+.dim {
+	color: var(--ink-dim);
+	font-size: var(--fs-sm);
+}
+
+.label {
+	display: block;
+	margin-bottom: var(--sp-2);
+	padding-bottom: var(--sp-1);
+	border-bottom: 1px solid var(--rule);
+	color: var(--ink-dim);
+	font-size: var(--fs-xs);
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+}
+
+hr {
+	height: 0;
+	margin: var(--sp-6) 0;
+	border: 0;
+	border-top: 1px solid var(--rule);
+}
+
+/* Links -------------------------------------------------------------- */
+
+a {
+	color: inherit;
+	text-decoration: underline;
+	text-decoration-color: var(--accent);
+	text-decoration-thickness: 1px;
+	text-underline-offset: 3px;
+}
+
+a:hover {
+	text-decoration-color: var(--accent-hover);
+	text-decoration-thickness: 2px;
+}
+
+a:focus-visible,
+button:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+	border-radius: 1px;
+}
+
+/* Code --------------------------------------------------------------- */
+
+code {
+	padding: 0.1em 0.35em;
+	background: var(--bg-subtle);
+	border-radius: 2px;
+	font-family: var(--font-mono);
+	font-size: 0.9em;
+}
+
+pre {
+	margin: 0 0 var(--sp-4);
+	padding: var(--sp-4);
+	overflow-x: auto;
+	background: var(--bg-subtle);
+	border: 1px solid var(--rule);
+	border-radius: 2px;
+	font-size: var(--fs-sm);
+}
+
+pre > code {
+	padding: 0;
+	background: none;
+}
+
+/* Tables and media --------------------------------------------------- */
+
+table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: var(--fs-sm);
+}
+
+th,
+td {
+	padding: var(--sp-2) var(--sp-3);
+	border-bottom: 1px solid var(--rule);
+	text-align: left;
+}
+
+th {
+	color: var(--ink-dim);
+	font-weight: 600;
+}
+
+img {
+	max-width: 100%;
+	height: auto;
+	border: 1px solid var(--rule);
+}
+
+/* Accessibility ------------------------------------------------------ */
+
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+.skip-link {
+	position: absolute;
+	left: var(--sp-4);
+	top: -3rem;
+	z-index: 10;
+	padding: var(--sp-2) var(--sp-3);
+	background: var(--bg);
+	border: 1px solid var(--rule);
+	transition: top 0.15s ease;
+}
+
+.skip-link:focus {
+	top: var(--sp-4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}

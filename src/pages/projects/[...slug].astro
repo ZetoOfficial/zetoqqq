@@ -1,0 +1,55 @@
+---
+import { type CollectionEntry, getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
+import { isPublished } from '../../lib/projects';
+
+export async function getStaticPaths() {
+	const projects = await getCollection('projects');
+	return projects.filter(isPublished).map((project) => ({
+		params: { slug: project.id },
+		props: project,
+	}));
+}
+
+type Props = CollectionEntry<'projects'>;
+
+const project = Astro.props;
+const { Content } = await render(project);
+const { title, summary, date, stack, url, repo } = project.data;
+---
+
+<Base title={title} description={summary}>
+	<article>
+		<h1>{title}</h1>
+		<p class="dim">
+			<FormattedDate date={date} />
+			{stack.length > 0 && <> &middot; {stack.join(' · ')}</>}
+		</p>
+		{
+			(url || repo) && (
+				<p class="links">
+					{url && (
+						<a href={url} target="_blank" rel="noopener">
+							live
+						</a>
+					)}
+					{repo && (
+						<a href={repo} target="_blank" rel="noopener">
+							source
+						</a>
+					)}
+				</p>
+			)
+		}
+		<hr />
+		<Content />
+	</article>
+</Base>
+
+<style>
+	.links {
+		display: flex;
+		gap: var(--sp-4);
+	}
+</style>

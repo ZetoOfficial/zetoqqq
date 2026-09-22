@@ -1,0 +1,174 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { findColourLiterals, findColourLiteralsInFile } from './lib/colour-scan.js';
+
+// The guard test (tokens.test.js) is only as good as this detector. Every
+// case here is something the detector must be shown to catch, or shown not
+// to falsely catch — not just asserted in the abstract.
+
+test('flags a named colour value', () => {
+	assert.ok(findColourLiterals('background: white;').length > 0);
+});
+
+test('flags hex colours', () => {
+	assert.ok(findColourLiterals('color: #fff;').length > 0);
+	assert.ok(findColourLiterals('color: #2b5c8a;').length > 0);
+});
+
+test('flags rgb() and modern colour functions', () => {
+	assert.ok(findColourLiterals('background: rgb(1,2,3);').length > 0);
+	assert.ok(findColourLiterals('color: oklch(0.7 0.1 250);').length > 0);
+});
+
+test('does not flag a hyphenated property name that contains a colour word', () => {
+	// The trap: a naive /\bwhite\b/ regex matches inside "white-space" too,
+	// because `-` counts as a word boundary. Property names sit to the left
+	// of `:` and are never scanned — only the value side is.
+	assert.deepEqual(findColourLiterals('white-space: nowrap;'), []);
+});
+
+test('does not flag the transparent and currentColor keywords', () => {
+	assert.deepEqual(findColourLiterals('border-color: transparent;'), []);
+	assert.deepEqual(findColourLiterals('fill: currentColor;'), []);
+});
+
+test('does not flag a var() reference', () => {
+	assert.deepEqual(findColourLiterals('color: var(--ink);'), []);
+});
+
+test('does not flag a colour mentioned only inside a comment', () => {
+	assert.deepEqual(findColourLiterals('/* #fff was here */ color: var(--ink);'), []);
+});
+
+test('does not flag string values such as grid-template-areas', () => {
+	assert.deepEqual(findColourLiterals('grid-template-areas: "a b";'), []);
+});
+
+test('scans real nested rules and at-rules, not just bare declarations', () => {
+	const css = `
+		@media (prefers-color-scheme: dark) {
+			:root:not([data-theme='light']) {
+				--bg: #111113;
+			}
+		}
+	`;
+	assert.deepEqual(findColourLiterals(css), ['#111113']);
+});
+
+test('does not flag pseudo-classes or attribute selectors', () => {
+	const css = `
+		a:focus-visible,
+		button:focus-visible {
+			outline: 2px solid var(--accent);
+		}
+		:root[data-theme='dark'] {
+			--ink: var(--ink);
+		}
+	`;
+	assert.deepEqual(findColourLiterals(css), []);
+});
+
+// A brace-only scan silently drops anything outside a `{ }` pair — including
+// an inline `style=` attribute, which never sits inside braces at all. These
+// cases cover that second, explicitly named source.
+
+test('flags colours from both a <style> block and an inline style attribute in the same file', () => {
+	const astroFile =
+		'---\n' +
+		'import { Icon } from "astro-icon";\n' +
+		'---\n' +
+		'<div style="color: red;">Hi</div>\n' +
+		'<style>\n' +
+		' .foo { color: blue; }\n' +
+		'</style>';
+	const offenders = findColourLiterals(astroFile).map((s) => s.toLowerCase());
+	assert.ok(offenders.includes('red'), 'expected the inline style="color: red" to be flagged');
+	assert.ok(offenders.includes('blue'), 'expected the <style> block\'s color: blue to be flagged');
+});
+
+test('flags an inline style attribute with no <style> block anywhere in the file', () => {
+	const astroFile = '---\nconst { title } = Astro.props;\n---\n<div style="color: #2b5c8a;">Hi</div>';
+	assert.ok(findColourLiterals(astroFile).length > 0);
+});
+
+test('flags a literal hex inside an Astro style={`...`} template expression', () => {
+	// The `${x}` interpolation must not itself be mistaken for a colour, and
+	// must not stop the real hex literal alongside it from being found.
+	const snippet = 'style={`color: ${x}; border-color: #2b5c8a`}';
+	assert.ok(findColourLiterals(snippet).length > 0);
+});
+
+test('does not flag a TypeScript type annotation in frontmatter', () => {
+	const frontmatter = `
+		type Props = {
+			title: string;
+			description?: string;
+		};
+		const { title, description } = Astro.props;
+	`;
+	assert.deepEqual(findColourLiterals(frontmatter), []);
+});
+
+test('does not flag frontmatter prose that happens to mention a colour word', () => {
+	// This is the false-positive trap the two-source design exists to avoid:
+	// scanning every `prop: value` pair in frontmatter (instead of only real
+	// CSS declarations and inline style attributes) would catch this too.
+	const frontmatter = `
+		type Props = {
+			title: string;
+		};
+		const { title } = Astro.props;
+		const d = 'a post about the colour red';
+	`;
+	assert.deepEqual(findColourLiterals(frontmatter), []);
+});
+
+// `findColourLiteralsInFile` is what the guard walk uses, and it exists
+// because `findColourLiterals`'s `{ }` wrapper is wrong for a file that has
+// no braces in it — which is every ordinary Markdown post. These cases pin
+// both halves of that: prose must not be scanned as CSS, and the one thing
+// in a `.md` that genuinely IS CSS must still be caught.
+
+const MARKDOWN_POST = `---
+title: 'Blue-green deploys in Go'
+description: 'On rollouts.'
+pubDate: 2026-01-01
+---
+
+The silver bullet is that there is no silver bullet. We moved the gold path
+onto a teal dashboard and called it a day.
+`;
+
+test('does not flag colour words in the prose of a Markdown post', () => {
+	// The wrapping trick makes the frontmatter's first colon start a
+	// "declaration" whose value is the rest of the file, so every named
+	// colour in the body is reported. That would red `npm run test:unit` on
+	// the first real post committed — breaking the "committing the first post
+	// needs no further change" promise at the exact moment it is tested.
+	assert.deepEqual(findColourLiteralsInFile(MARKDOWN_POST), []);
+
+	// The bug this guards against, stated as an executable fact: the
+	// CSS-input function really does report those words, which is why the
+	// walk must not use it on files.
+	assert.deepEqual(findColourLiterals(MARKDOWN_POST), ['silver', 'silver', 'gold', 'teal']);
+});
+
+test('does not flag a colour word in a brace-free TypeScript file', () => {
+	const ts = "export const SITE_TITLE = 'Notes: a silver lining';\n";
+	assert.deepEqual(findColourLiteralsInFile(ts), []);
+});
+
+test('still flags an inline style attribute inside a Markdown post', () => {
+	// The case the widened walk exists for. Narrowing the file scan to real
+	// brace blocks must not cost this.
+	const post = `${MARKDOWN_POST}\n<p style="color:#fff">A callout.</p>\n`;
+	assert.deepEqual(findColourLiteralsInFile(post), ['#fff']);
+});
+
+test('still flags a real CSS block inside a file', () => {
+	const astroFile = '---\nconst x = 1;\n---\n<style>\n .foo { color: blue; }\n</style>';
+	assert.deepEqual(
+		findColourLiteralsInFile(astroFile).map((s) => s.toLowerCase()),
+		['blue'],
+	);
+});

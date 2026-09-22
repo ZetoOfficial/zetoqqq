@@ -1,0 +1,29 @@
+---
+import { Image } from 'astro:assets';
+import type { CollectionEntry } from 'astro:content';
+import FormattedDate from '../components/FormattedDate.astro';
+import Base from './Base.astro';
+
+type Props = CollectionEntry<'blog'>['data'];
+
+const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
+---
+
+<Base title={title} description={description}>
+	<article>
+		{heroImage && <Image width={1020} height={510} src={heroImage} alt="" />}
+		<h1>{title}</h1>
+		<p class="dim">
+			<FormattedDate date={pubDate} />
+			{
+				updatedDate && (
+					<>
+						{' '}&middot; updated <FormattedDate date={updatedDate} />
+					</>
+				)
+			}
+		</p>
+		<hr />
+		<slot />
+	</article>
+</Base>

@@ -1,0 +1,43 @@
+---
+interface Props {
+	label: string;
+	href?: string;
+}
+
+const { label, href } = Astro.props;
+---
+
+<section>
+	{/* The "all →" link is a sibling of the heading, not a child of it: nested
+	    inside the <h2> it would become part of the heading's accessible name
+	    ("Projects all →"). The flex wrapper below puts them back on one line. */}
+	<div class="label head">
+		<h2>{label}</h2>
+		{href && <a href={href}>all &rarr;</a>}
+	</div>
+	<slot />
+</section>
+
+<style>
+	section {
+		margin-top: var(--sp-6);
+	}
+	.head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: var(--sp-4);
+	}
+	h2 {
+		/* .head already supplies the rule, colour, size and tracking. */
+		margin: 0;
+		font-size: inherit;
+		font-weight: 400;
+		letter-spacing: inherit;
+		color: inherit;
+	}
+	.head a {
+		text-transform: none;
+		letter-spacing: 0;
+	}
+</style>

@@ -1,0 +1,60 @@
+---
+interface Props {
+	title: string;
+	href: string;
+	/**
+	 * Plain-text meta line (the projects pages pass their stack line here).
+	 * For markup — a `<FormattedDate>`, say — pass a `meta` slot instead;
+	 * the slot wins when both are supplied.
+	 */
+	meta?: string;
+	blurb?: string;
+	tags?: string[];
+}
+
+const { title, href, meta, blurb, tags } = Astro.props;
+const hasMetaSlot = Astro.slots.has('meta');
+---
+
+<article>
+	<h3>
+		<a href={href}>{title}</a>
+	</h3>
+	{
+		hasMetaSlot ? (
+			<p class="dim meta">
+				<slot name="meta" />
+			</p>
+		) : (
+			meta && <p class="dim meta">{meta}</p>
+		)
+	}
+	{blurb && <p class="blurb">{blurb}</p>}
+	{
+		tags && tags.length > 0 && (
+			<p class="dim tags">{tags.map((tag) => `#${tag}`).join(' ')}</p>
+		)
+	}
+</article>
+
+<style>
+	article {
+		margin-bottom: var(--sp-4);
+	}
+	h3 {
+		margin: 0;
+		font-size: var(--fs-base);
+		font-weight: 600;
+	}
+	.meta,
+	.tags {
+		margin: 0;
+	}
+	.blurb {
+		margin: var(--sp-1) 0 0;
+	}
+	.tags {
+		margin-top: var(--sp-1);
+		font-size: var(--fs-xs);
+	}
+</style>
