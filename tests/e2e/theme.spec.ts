@@ -39,3 +39,50 @@ test('the stored theme is applied before first paint', async ({ page }) => {
 	await page.goto('/', { waitUntil: 'commit' });
 	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 });
+
+// The behavioural test above uses `expect(locator).toHaveAttribute(...)`,
+// which auto-retries for several seconds -- so it cannot distinguish "ran
+// before first paint" from "ran eventually, within the retry window." A
+// deferred `type="module"` script still passes it. This structural test
+// reads the served markup directly and pins the properties that actually
+// prevent a flash: a genuinely inline, unbundled, unattributed <script>,
+// positioned before any styling in <head>.
+test('the theme script is a genuine inline script that runs before any styling', async ({ request }) => {
+	const response = await request.get('/');
+	const html = await response.text();
+
+	const headMatch = html.match(/<head[^>]*>([\s\S]*?)<\/head>/);
+	expect(headMatch, 'expected a <head> section in the served HTML').toBeTruthy();
+	const head = headMatch![1];
+
+	const scriptTagPattern = /<script([^>]*)>([\s\S]*?)<\/script>/g;
+	let themeScript: { attrs: string; index: number } | null = null;
+	let match: RegExpExecArray | null;
+	while ((match = scriptTagPattern.exec(head))) {
+		if (/localStorage\.getItem\((['"`])theme\1\)/.test(match[2])) {
+			themeScript = { attrs: match[1], index: match.index };
+			break;
+		}
+	}
+	expect(
+		themeScript,
+		"expected a <script> in <head> reading localStorage.getItem('theme')",
+	).toBeTruthy();
+
+	// The load-bearing checks: Astro's `is:inline` emits a bare inline
+	// <script> with no attributes. Removing `is:inline` makes Astro bundle
+	// it as a deferred `<script type="module" src="...">` instead -- this
+	// is exactly the mutation that the behavioural test above fails to
+	// catch, and these assertions pin it.
+	expect(themeScript!.attrs).not.toMatch(/\btype\s*=\s*["']module["']/);
+	expect(themeScript!.attrs).not.toMatch(/\bsrc\s*=/);
+	expect(themeScript!.attrs).not.toMatch(/\bdefer\b/);
+	expect(themeScript!.attrs).not.toMatch(/\basync\b/);
+
+	// It must also run before any styling is linked or declared -- a
+	// structurally inline script placed too late could still paint the
+	// wrong theme first.
+	const firstStyleIndex = head.search(/<link[^>]*rel=["']stylesheet["']|<style[\s>]/);
+	expect(firstStyleIndex, 'expected a stylesheet or <style> in <head>').toBeGreaterThan(-1);
+	expect(themeScript!.index).toBeLessThan(firstStyleIndex);
+});
