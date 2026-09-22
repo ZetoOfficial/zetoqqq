@@ -1,8 +1,87 @@
 ---
+import { getCollection } from 'astro:content';
+import Entry from '../components/Entry.astro';
+import Section from '../components/Section.astro';
+import { SITE_DESCRIPTION } from '../consts';
+import { profile } from '../data/profile';
 import Base from '../layouts/Base.astro';
-import { SITE_TITLE } from '../consts';
+import { sortProjects } from '../lib/projects';
+
+const projects = sortProjects(await getCollection('projects')).slice(0, 3);
+
+const posts = (await getCollection('blog')).sort(
+	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+const recentPosts = posts.slice(0, 4);
 ---
 
-<Base title={SITE_TITLE}>
-	<p>Placeholder — the homepage is built in Task 7.</p>
+<Base title={profile.name} description={SITE_DESCRIPTION}>
+	{/* TODO: Pavel — this intro is drafted from your CV. Rewrite it in your
+	    own voice; it is the first thing anyone reads. */}
+	<p>
+		Hi, I&rsquo;m Pavel. I write Go for a living: distributed services and the
+		unglamorous production automation that keeps them upright. Five years of it,
+		mostly fintech and e-commerce.
+	</p>
+	<p>
+		Lately I&rsquo;ve been pulling on a different thread &mdash; LLM agents that
+		can investigate an incident instead of just paging me about it. That is what
+		the AI Interviewer work was really about.
+	</p>
+
+	<Section label="Now">
+		<p>{profile.now}</p>
+	</Section>
+
+	<Section label="Projects" href="/projects">
+		{
+			projects.map((project) => (
+				<Entry
+					title={project.data.title}
+					href={`/projects/${project.id}/`}
+					meta={project.data.stack.slice(0, 4).join(' · ')}
+					blurb={project.data.summary}
+				/>
+			))
+		}
+	</Section>
+
+	{
+		recentPosts.length > 0 && (
+			<Section label="Writing" href="/blog">
+				{recentPosts.map((post) => (
+					<Entry
+						title={post.data.title}
+						href={`/blog/${post.id}/`}
+						blurb={post.data.description}
+					/>
+				))}
+			</Section>
+		)
+	}
+
+	<Section label="Elsewhere">
+		<ul class="elsewhere">
+			{
+				profile.links.map((link) => (
+					<li>
+						<a href={link.href} rel="me noopener">
+							{link.label}
+						</a>
+					</li>
+				))
+			}
+		</ul>
+	</Section>
 </Base>
+
+<style>
+	.elsewhere {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	.elsewhere li {
+		margin-bottom: var(--sp-1);
+	}
+</style>
