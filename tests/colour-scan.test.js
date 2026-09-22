@@ -67,3 +67,58 @@ test('does not flag pseudo-classes or attribute selectors', () => {
 	`;
 	assert.deepEqual(findColourLiterals(css), []);
 });
+
+// A brace-only scan silently drops anything outside a `{ }` pair — including
+// an inline `style=` attribute, which never sits inside braces at all. These
+// cases cover that second, explicitly named source.
+
+test('flags colours from both a <style> block and an inline style attribute in the same file', () => {
+	const astroFile =
+		'---\n' +
+		'import { Icon } from "astro-icon";\n' +
+		'---\n' +
+		'<div style="color: red;">Hi</div>\n' +
+		'<style>\n' +
+		' .foo { color: blue; }\n' +
+		'</style>';
+	const offenders = findColourLiterals(astroFile).map((s) => s.toLowerCase());
+	assert.ok(offenders.includes('red'), 'expected the inline style="color: red" to be flagged');
+	assert.ok(offenders.includes('blue'), 'expected the <style> block\'s color: blue to be flagged');
+});
+
+test('flags an inline style attribute with no <style> block anywhere in the file', () => {
+	const astroFile = '---\nconst { title } = Astro.props;\n---\n<div style="color: #2b5c8a;">Hi</div>';
+	assert.ok(findColourLiterals(astroFile).length > 0);
+});
+
+test('flags a literal hex inside an Astro style={`...`} template expression', () => {
+	// The `${x}` interpolation must not itself be mistaken for a colour, and
+	// must not stop the real hex literal alongside it from being found.
+	const snippet = 'style={`color: ${x}; border-color: #2b5c8a`}';
+	assert.ok(findColourLiterals(snippet).length > 0);
+});
+
+test('does not flag a TypeScript type annotation in frontmatter', () => {
+	const frontmatter = `
+		type Props = {
+			title: string;
+			description?: string;
+		};
+		const { title, description } = Astro.props;
+	`;
+	assert.deepEqual(findColourLiterals(frontmatter), []);
+});
+
+test('does not flag frontmatter prose that happens to mention a colour word', () => {
+	// This is the false-positive trap the two-source design exists to avoid:
+	// scanning every `prop: value` pair in frontmatter (instead of only real
+	// CSS declarations and inline style attributes) would catch this too.
+	const frontmatter = `
+		type Props = {
+			title: string;
+		};
+		const { title } = Astro.props;
+		const d = 'a post about the colour red';
+	`;
+	assert.deepEqual(findColourLiterals(frontmatter), []);
+});
