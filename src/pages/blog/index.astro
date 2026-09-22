@@ -1,25 +1,33 @@
 ---
 import { getCollection } from 'astro:content';
+import Entry from '../../components/Entry.astro';
 import Base from '../../layouts/Base.astro';
-import FormattedDate from '../../components/FormattedDate.astro';
 
 const posts = (await getCollection('blog')).sort(
 	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
 );
+
+const formatter = new Intl.DateTimeFormat('en-us', {
+	year: 'numeric',
+	month: 'short',
+	day: 'numeric',
+});
 ---
 
-<Base title="Writing">
+<Base title="Writing" description="Notes on Go, distributed systems and LLM agents.">
 	<h1>Writing</h1>
-	<ul>
-		{
+	{
+		posts.length === 0 ? (
+			<p class="dim">Nothing published yet.</p>
+		) : (
 			posts.map((post) => (
-				<li>
-					<a href={`/blog/${post.id}/`}>{post.data.title}</a>{' '}
-					<span class="dim">
-						<FormattedDate date={post.data.pubDate} />
-					</span>
-				</li>
+				<Entry
+					title={post.data.title}
+					href={`/blog/${post.id}/`}
+					meta={formatter.format(post.data.pubDate)}
+					blurb={post.data.description}
+				/>
 			))
-		}
-	</ul>
+		)
+	}
 </Base>
