@@ -179,8 +179,13 @@ is a starting point for his editing, not a finished artifact.
 - Semantic landmarks, a skip link, and a visible focus ring drawn in
   `--accent`.
 - `prefers-reduced-motion` respected.
-- IBM Plex Mono self-hosted via `@fontsource/ibm-plex-mono` rather than
-  the Google CDN — no third-party request on page load.
+- IBM Plex Mono self-hosted via Astro 7's native Fonts API
+  (`fontProviders.google()` in `astro.config.mjs`, `<Font>` in
+  `BaseHead`), which downloads and serves the font from our own origin at
+  build time — no third-party request on page load. This supersedes the
+  `@fontsource/ibm-plex-mono` package named in earlier drafts; the
+  starter already uses this API for its own font, so it is the
+  framework-native path rather than an added dependency.
 - Text contrast meets WCAG AA in both themes. The accent is verified
   against `--bg` in both.
 - No layout shift on theme application.
