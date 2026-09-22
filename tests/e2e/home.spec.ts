@@ -25,11 +25,12 @@ test('renders the dense index sections in order', async ({ page }) => {
 		l.trim().toLowerCase(),
 	);
 
-	// now → projects → elsewhere always, with `writing` between projects and
-	// elsewhere exactly when the collection is non-empty.
+	// now → projects always, with `writing` after them exactly when the
+	// collection is non-empty. The links live in the header and the footer;
+	// a third copy in the page body would sit directly above the footer's.
 	const expected = hasPosts
-		? ['now', 'projects', 'writing', 'elsewhere']
-		: ['now', 'projects', 'elsewhere'];
+		? ['now', 'projects', 'writing']
+		: ['now', 'projects'];
 	expect(labels).toEqual(expected);
 });
 
@@ -87,4 +88,17 @@ test('links to both project detail pages', async ({ page }) => {
 	await projectsSection(page).getByRole('link', { name: 'PartnerSC backend' }).click();
 	await expect(page).toHaveURL(/\/projects\/partnersc-backend\/?$/);
 	await expect(page.locator('h1')).toHaveText('PartnerSC backend');
+});
+
+test('the elsewhere links are not repeated a third time in the page body', async ({ page }) => {
+	await page.goto('/');
+	await expect(page.locator('main h2', { hasText: /^elsewhere$/i })).toHaveCount(0);
+
+	// Still reachable, twice: once in the header, once in the footer.
+	for (const label of ['github', 'linkedin', 'email']) {
+		await expect(
+			page.getByRole('link', { name: label, exact: true }),
+			`${label} should appear in the header and the footer only`,
+		).toHaveCount(2);
+	}
 });

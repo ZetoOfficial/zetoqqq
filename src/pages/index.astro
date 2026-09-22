@@ -61,28 +61,5 @@ const recentPosts = sortPosts(await getCollection('blog')).slice(0, 4);
 		)
 	}
 
-	<Section label="Elsewhere">
-		<ul class="elsewhere">
-			{
-				profile.links.map((link) => (
-					<li>
-						<a href={link.href} rel="me noopener">
-							{link.label}
-						</a>
-					</li>
-				))
-			}
-		</ul>
-	</Section>
 </Base>
 
-<style>
-	.elsewhere {
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-	.elsewhere li {
-		margin-bottom: var(--sp-1);
-	}
-</style>
